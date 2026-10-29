@@ -1,0 +1,81 @@
+From 225eb371b63e34a42aedb24f028da6b54fd05ab9 Mon Sep 17 00:00:00 2001
+From: mulatta <67085791+mulatta@users.noreply.github.com>
+Date: Wed, 28 Oct 2026 20:35:10 +0900
+Subject: [PATCH] skills: quote the factory skill description
+
+The unquoted description contains "agents: store", which YAML reads as a
+nested mapping. parse_frontmatter turns the parse error into an empty map,
+so the skill loses its description and discovery drops it with only a
+"description is required" warning.
+
+bundled_skills_match_the_ts_packaged_set listed the set without factory,
+so it passed while the skill was missing. Add factory there, and check
+that every skills/<name>/SKILL.md loads without diagnostics.
+
+Change-Id: I1e9539176d1f76dcf26fc2077fae08a8acd30959
+Signed-off-by: mulatta <67085791+mulatta@users.noreply.github.com>
+---
+ crates/pa-core/tests/prompt_guards.rs | 27 +++++++++++++++++++++++++++
+ skills/factory/SKILL.md               |  2 +-
+ 2 files changed, 28 insertions(+), 1 deletion(-)
+
+diff --git a/crates/pa-core/tests/prompt_guards.rs b/crates/pa-core/tests/prompt_guards.rs
+index 341db28bf..469da5d69 100644
+--- a/crates/pa-core/tests/prompt_guards.rs
++++ b/crates/pa-core/tests/prompt_guards.rs
+@@ -523,6 +523,7 @@ const TS_PACKAGED_SKILL_SET: &[&str] = &[
+     "attach-image",
+     "compact",
+     "edit",
++    "factory",
+     "goal",
+     "mcp",
+     "prime-intellect",
+@@ -562,6 +563,32 @@ fn bundled_skills_match_the_ts_packaged_set() {
+     );
+ }
+ 
++/// Every bundled skill directory loads without diagnostics. A frontmatter that is not valid YAML
++/// parses to an empty map, so the skill loses its description and drops out of discovery silently.
++#[test]
++fn every_bundled_skill_directory_loads() {
++    let skills_dir = bundled_skills_dir();
++    let loaded = load_skills_from_dir(&skills_dir, "package");
++    assert!(
++        loaded.diagnostics.is_empty(),
++        "bundled skills produced diagnostics: {:?}",
++        loaded.diagnostics
++    );
++    let mut dirs: Vec<String> = std::fs::read_dir(&skills_dir)
++        .expect("skills dir")
++        .filter_map(Result::ok)
++        .filter(|entry| entry.path().join("SKILL.md").is_file())
++        .map(|entry| entry.file_name().to_string_lossy().into_owned())
++        .collect();
++    dirs.sort();
++    let mut names: Vec<String> = loaded.skills.into_iter().map(|skill| skill.name).collect();
++    names.sort();
++    assert_eq!(
++        names, dirs,
++        "every skills/<name>/SKILL.md must load as a skill"
++    );
++}
++
+ /// The bounded-await contract renders wherever the Python REPL does: every session kind, daemon
+ /// or daemonless, registers the bash completion notice the degrade relies on.
+ #[test]
+diff --git a/skills/factory/SKILL.md b/skills/factory/SKILL.md
+index 74bac188e..e4358feb9 100644
+--- a/skills/factory/SKILL.md
++++ b/skills/factory/SKILL.md
+@@ -1,6 +1,6 @@
+ ---
+ name: factory
+-description: Run state-machine workflows of spawned child agents: store a validated machine or dag spec as a continual-harness factory entry (rlm.harness.create_factory), then run, watch, stop, and resume it through rlm.factory. For the full authoring reference and API guide, call rlm.factory.help() in the kernel.
++description: "Run state-machine workflows of spawned child agents: store a validated machine or dag spec as a continual-harness factory entry (rlm.harness.create_factory), then run, watch, stop, and resume it through rlm.factory. For the full authoring reference and API guide, call rlm.factory.help() in the kernel."
+ ---
+ 
+ # Factory
+-- 
+2.56.0
+

@@ -23,6 +23,10 @@
       treefmtEval = eachSystem (pkgs: inputs.treefmt-nix.lib.evalModule pkgs ./nix/treefmt.nix);
     in
     {
+      packages = eachSystem (pkgs: {
+        prime-agent = pkgs.callPackage ./nix/package.nix { };
+      });
+
       devShells = eachSystem (
         pkgs:
         let
