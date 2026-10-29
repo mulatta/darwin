@@ -1,0 +1,13 @@
+[project]
+name = "skill-pair"
+version = "0.1.0"
+description = "Work directly in a live marimo notebook kernel and verify it with clean runs"
+requires-python = ">=3.11"
+dependencies = ["httpx", "skill-artifact"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pair"]
